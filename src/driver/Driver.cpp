@@ -23,7 +23,7 @@ const double MAX_TIMESTEP_NFTR_LOOP = 0.05;
 /// \brief Driver::Driver
 /// \param world
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 Driver::Driver(
                World     &world,
@@ -46,7 +46,7 @@ Driver::Driver(
 /////////////////////////////////////////////
 /// \brief Driver::~Driver
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 Driver::~Driver( )
 {}
@@ -56,7 +56,7 @@ Driver::~Driver( )
 /// \brief Driver::exec
 /// \return
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 int
 Driver::exec(
@@ -107,7 +107,7 @@ Driver::exec(
 /////////////////////////////////////////////
 /// \brief Driver::_runAFAPLoop
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 void
 Driver::_runAFAPLoop( )
@@ -140,7 +140,7 @@ Driver::_runAFAPLoop( )
 /////////////////////////////////////////////
 /// \brief Driver::_runNFTRLoop
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 void
 Driver::_runNFTRLoop( )
@@ -220,7 +220,7 @@ Driver::_runNFTRLoop( )
 /////////////////////////////////////////////
 /// \brief Driver::_getTimeSeconds
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 double
 Driver::_getTimeSeconds( )
@@ -245,7 +245,7 @@ Driver::_getTimeSeconds( )
 /////////////////////////////////////////////
 /// \brief Driver::printProjectInfo
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 void
 Driver::printProjectInfo(

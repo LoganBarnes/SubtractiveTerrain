@@ -47,7 +47,7 @@ signalHandler( int signum )
 /////////////////////////////////////////////
 /// \brief Renderer::Renderer
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 IOHandler::IOHandler(
                      World &world,
@@ -89,7 +89,7 @@ IOHandler::IOHandler(
 /////////////////////////////////////////////
 /// \brief Renderer::~Renderer
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 IOHandler::~IOHandler( )
 {}
@@ -99,7 +99,7 @@ IOHandler::~IOHandler( )
 /// \brief Renderer::render
 /// \param alpha
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 void
 IOHandler::showWorld( const double )
@@ -127,7 +127,7 @@ IOHandler::showWorld( const double )
 /////////////////////////////////////////////
 /// \brief IOHandler::updateIO
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 void
 IOHandler::updateIO( )

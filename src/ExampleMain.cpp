@@ -11,7 +11,7 @@
 /// \brief main
 /// \return
 ///
-/// \author LogiBear
+/// \author Logan Barnes
 /////////////////////////////////////////////
 int
 main(
