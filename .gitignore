@@ -1,0 +1,25 @@
+# QT Creator #
+##############
+*.user
+*.stash
+*.config
+*.creator
+*.files
+*.includes
+
+# Compiled Source #
+###################
+build/
+_build/
+
+# Installed Dirs #
+##################
+run/bin
+run/lib
+run/libbin
+run/include
+
+# OS Generated Files #
+######################
+*.DS_Store
+

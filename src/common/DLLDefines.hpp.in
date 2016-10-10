@@ -1,0 +1,30 @@
+#ifndef DLLDefines_hpp
+#define DLLDefines_hpp
+
+/* Cmake will define DLL_EXPORTS on Windows when it
+configures to build a shared library. If you are going to use
+another build system on windows or create the visual studio
+projects by hand you need to defineDLL_EXPORTS when
+building a DLL on windows.
+*/
+// We are using the Visual Studio Compiler and building Shared libraries
+
+#if defined ( _WIN32 )
+
+  #if defined( DLL_EXPORTS )
+
+    #define DLL_EXPORT __declspec( dllexport )
+
+  #else
+
+    #define DLL_EXPORT __declspec( dllimport )
+
+  #endif // DLL_EXPORTS
+
+#else // defined ( _WIN32 )
+
+ #define DLL_EXPORT
+
+#endif
+
+#endif // DLLDefines_hpp

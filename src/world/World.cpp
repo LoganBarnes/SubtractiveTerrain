@@ -1,0 +1,41 @@
+#include "World.hpp"
+
+
+namespace srt
+{
+
+
+/////////////////////////////////////////////
+/// \brief World::World
+///
+/// \author LogiBear
+/////////////////////////////////////////////
+World::World( )
+{}
+
+
+/////////////////////////////////////////////
+/// \brief World::~World
+///
+/// \author LogiBear
+/////////////////////////////////////////////
+World::~World( )
+{}
+
+
+
+/////////////////////////////////////////////
+/// \brief World::update
+///
+/// \author LogiBear
+/////////////////////////////////////////////
+void
+World::update(
+              const double, ///< update to this time
+              const double  ///< interval since last update
+              )
+{}
+
+
+
+} // namespace srt
