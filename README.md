@@ -22,5 +22,5 @@ Ensure the *MSBuild.exe* and Vulkan SDK directories are added to the environment
 ```bash
 cd run
 winConfigureAndBuild.cmd
-bin/runSubtractiveTerrain
+bin\runSubtractiveTerrain
 ```
