@@ -1,7 +1,7 @@
 Subtractive Terrain
 ===================
 
-A new implementation of an old hackathon project optimizing procedural terrain rendering in a ray traced environment.
+A new implementation of an old hackathon project optimizing procedural terrain in a ray traced environment.
 
 
 Unix
