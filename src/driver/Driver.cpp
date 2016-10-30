@@ -107,6 +107,8 @@ Driver::exec(
 /////////////////////////////////////////////
 /// \brief Driver::_runAFAPLoop
 ///
+///        Runs sim As Fast As Possible
+///
 /// \author Logan Barnes
 /////////////////////////////////////////////
 void
@@ -139,6 +141,8 @@ Driver::_runAFAPLoop( )
 
 /////////////////////////////////////////////
 /// \brief Driver::_runNFTRLoop
+///
+///        Runs sim No Faster Than Real-time
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////

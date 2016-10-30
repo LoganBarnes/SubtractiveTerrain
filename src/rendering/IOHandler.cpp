@@ -39,8 +39,6 @@ signalHandler( int signum )
 
 }
 
-
-
 }
 
 
@@ -78,7 +76,7 @@ IOHandler::IOHandler(
   catch ( const std::exception &e )
   {
 
-    std::cerr << "IOHandler graphic init failed: " << e.what( ) << std::endl;
+    std::cerr << "IOHandler graphics init failed: " << e.what( ) << std::endl;
 
   }
 

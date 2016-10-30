@@ -10,6 +10,6 @@ mkdir _build
 :NOWINDIR
 
 cd _build
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=%RUN_DIR% ..\..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%RUN_DIR% ..\..
 MSBuild.exe /m INSTALL.vcxproj
 cd ..

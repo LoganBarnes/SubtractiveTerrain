@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <iostream>
+#include <set>
 
 #define GLFW_INCLUDE_GL_3
 #include "GLFW/glfw3.h"
@@ -20,10 +21,20 @@ namespace
 //
 // requested error checking layers
 //
-const std::vector< const char* > validationLayers
+const std::vector< const char* > validationLayers =
 {
 
   "VK_LAYER_LUNARG_standard_validation"
+
+};
+
+//
+// requested GPU extensions
+//
+const std::vector< const char* > deviceExtensions =
+{
+
+  VK_KHR_SWAPCHAIN_EXTENSION_NAME
 
 };
 
@@ -86,6 +97,32 @@ checkValidationLayerSupport( )
   return true;
 
 } // checkValidationLayerSupport
+
+
+
+bool
+checkDeviceExtensionSupport( VkPhysicalDevice device )
+{
+
+  uint32_t extensionCount;
+
+  vkEnumerateDeviceExtensionProperties( device, nullptr, &extensionCount, nullptr );
+
+  std::vector< VkExtensionProperties > availableExtensions( extensionCount );
+  vkEnumerateDeviceExtensionProperties( device, nullptr, &extensionCount, availableExtensions.data( ) );
+
+  std::set< std::string > requiredExtensions( deviceExtensions.begin(), deviceExtensions.end( ) );
+
+  for ( const auto & extension : availableExtensions )
+  {
+
+    requiredExtensions.erase( extension.extensionName );
+
+  }
+
+  return requiredExtensions.empty( );
+
+}
 
 
 
@@ -158,7 +195,112 @@ debugCallback(
 
 
 
+///
+/// \brief The QueueFamilyIndices struct
+///
+struct QueueFamilyIndices
+{
+
+  int graphicsFamily_ = -1;
+  int presentFamily_  = -1;
+
+  bool
+  isComplete( )
+  {
+
+    return graphicsFamily_ >= 0 && presentFamily_ >= 0;
+
+  }
+
+
+};
+
+
+
+///
+/// \brief findQueueFamilies
+/// \param device
+/// \return
+///
+QueueFamilyIndices
+findQueueFamilies(
+                  VkPhysicalDevice device,
+                  VkSurfaceKHR     surface
+                  )
+{
+
+  QueueFamilyIndices indices;
+
+  uint32_t queueFamilyCount = 0;
+
+  vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, nullptr );
+
+  std::vector< VkQueueFamilyProperties > queueFamilies( queueFamilyCount );
+  vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, queueFamilies.data( ) );
+
+
+  int i = 0;
+
+  for ( const auto & queueFamily : queueFamilies )
+  {
+
+    if ( queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT )
+    {
+
+      indices.graphicsFamily_ = i;
+
+    }
+
+    VkBool32 presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR( device, i, surface, &presentSupport );
+
+    if ( queueFamily.queueCount > 0 && presentSupport )
+    {
+
+      indices.presentFamily_ = i;
+
+    }
+
+    if ( indices.isComplete( ) )
+    {
+
+      break;
+
+    }
+
+    ++i;
+
+  }
+
+  return indices;
+
+} // findQueueFamilies
+
+
+
+///
+/// \brief isDeviceSuitable
+/// \param device
+/// \return
+///
+bool
+isDeviceSuitable(
+                 VkPhysicalDevice device,
+                 VkSurfaceKHR     surface
+                 )
+{
+
+  QueueFamilyIndices indices = findQueueFamilies( device, surface );
+
+  bool extensionsSupported = checkDeviceExtensionSupport( device );
+
+  return indices.isComplete( ) && extensionsSupported;
+
 }
+
+
+
+} // namespace
 
 
 VulkanContextGLFW::VulkanContextGLFW(
@@ -168,9 +310,10 @@ VulkanContextGLFW::VulkanContextGLFW(
                                      )
   :
   GraphicsContext( title, width, height )
+  , physicalDevice_( VK_NULL_HANDLE )
 {
 
-  _initWindow( title, width, height );
+  _initWindow( title, width, height ); // GLFW init
   _initVulkan( title );
 
 }
@@ -334,6 +477,21 @@ VulkanContextGLFW::_initVulkan( const std::string &title )
   //
   _setUpVulkanDebugCallback( );
 
+  //
+  // surface for rendering?
+  //
+  _createVulkanSurface( );
+
+  //
+  // select GPU(s)
+  //
+  _setUpVulkanPhysicalDevice( );
+
+  //
+  // create device to interface with GPU
+  //
+  _createVulkanLogicalDevice( );
+
 } // VulkanContextGLFW::_initVulkan
 
 
@@ -448,6 +606,143 @@ VulkanContextGLFW::_setUpVulkanDebugCallback( )
   }
 
 } // VulkanContextGLFW::_setUpVulkanDebugCallback
+
+
+
+/////////////////////////////////////////////////////////////////
+/// \brief VulkanContextGLFW::_createVulkanSurface
+///
+/// \author Logan Barnes
+/////////////////////////////////////////////////////////////////
+void
+VulkanContextGLFW::_createVulkanSurface( )
+{
+
+  if ( glfwCreateWindowSurface( instance_, pWindow_, nullptr, surface_.replace( ) ) != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to create window surface" );
+
+  }
+
+}
+
+
+
+/////////////////////////////////////////////////////////////////
+/// \brief VulkanContextGLFW::_setUpVulkanPhysicalDevice
+///
+/// \author Logan Barnes
+/////////////////////////////////////////////////////////////////
+void
+VulkanContextGLFW::_setUpVulkanPhysicalDevice( )
+{
+
+  uint32_t deviceCount = 0;
+
+  vkEnumeratePhysicalDevices( instance_, &deviceCount, nullptr );
+
+  if ( deviceCount == 0 )
+  {
+
+    throw std::runtime_error( "Failed to find GPUs with Vulkan support" );
+
+  }
+
+  std::vector< VkPhysicalDevice > devices( deviceCount );
+  vkEnumeratePhysicalDevices( instance_, &deviceCount, devices.data( ) );
+
+  for ( const auto & device : devices )
+  {
+
+    ///\todo add device checking, scoring, and selection options.
+    ///      Using first vulkan capable device for now
+    if ( isDeviceSuitable( device, surface_ ) )
+    {
+
+      physicalDevice_ = device;
+      break;
+
+    }
+
+  }
+
+  if ( physicalDevice_ == VK_NULL_HANDLE )
+  {
+
+    throw std::runtime_error( "Failed to find a suitable GPU" );
+
+  }
+
+} // VulkanContextGLFW::_setUpVulkanPhysicalDevice
+
+
+
+/////////////////////////////////////////////////////////////////
+/// \brief VulkanContextGLFW::_createVulkanLogicalDevice
+///
+/// \author Logan Barnes
+/////////////////////////////////////////////////////////////////
+void
+VulkanContextGLFW::_createVulkanLogicalDevice( )
+{
+
+  QueueFamilyIndices indices = findQueueFamilies( physicalDevice_, surface_ );
+
+  std::vector< VkDeviceQueueCreateInfo > queueCreateInfos;
+  std::set< int > uniqueQueueFamilies = { indices.graphicsFamily_, indices.presentFamily_ };
+
+  float queuePriority = 1.0f;
+
+  for ( int queueFamily : uniqueQueueFamilies )
+  {
+
+    VkDeviceQueueCreateInfo queueCreateInfo = {};
+    queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = queueFamily;
+    queueCreateInfo.queueCount       = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfos.push_back( queueCreateInfo );
+
+  }
+
+  VkPhysicalDeviceFeatures deviceFeatures = {};
+
+  VkDeviceCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+  createInfo.pQueueCreateInfos    = queueCreateInfos.data( );
+  createInfo.queueCreateInfoCount = static_cast< uint32_t >( queueCreateInfos.size( ) );
+
+  createInfo.pEnabledFeatures = &deviceFeatures;
+
+  createInfo.enabledExtensionCount = 0;
+
+  if ( enableValidationLayers )
+  {
+
+    createInfo.enabledLayerCount   = validationLayers.size( );
+    createInfo.ppEnabledLayerNames = validationLayers.data( );
+
+  }
+  else
+  {
+
+    createInfo.enabledLayerCount = 0;
+
+  }
+
+  if ( vkCreateDevice( physicalDevice_, &createInfo, nullptr, device_.replace( ) ) != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to create logical device" );
+
+  }
+
+  vkGetDeviceQueue( device_, indices.graphicsFamily_, 0, &graphicsQueue_ );
+  vkGetDeviceQueue( device_, indices.presentFamily_,  0, &presentQueue_  );
+
+} // VulkanContextGLFW::_createVulkanLogicalDevice
 
 
 

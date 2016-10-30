@@ -60,6 +60,13 @@ private:
 
   void _setUpVulkanDebugCallback ( );
 
+  void _createVulkanSurface ( );
+
+  void _setUpVulkanPhysicalDevice ( );
+
+  void _createVulkanLogicalDevice ( );
+
+
   //
   // member vars
   //
@@ -73,6 +80,18 @@ private:
     instance_, DestroyDebugReportCallbackEXT
   };
 
+  VDeleter< VkSurfaceKHR > surface_ {
+    instance_, vkDestroySurfaceKHR
+  };
+
+  VkPhysicalDevice physicalDevice_;
+
+  VDeleter< VkDevice > device_ {
+    vkDestroyDevice
+  };
+
+  VkQueue graphicsQueue_;
+  VkQueue presentQueue_;
 
 };
 
