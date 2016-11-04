@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <set>
+#include <algorithm>
 
 #define GLFW_INCLUDE_GL_3
 #include "GLFW/glfw3.h"
@@ -212,8 +213,69 @@ struct QueueFamilyIndices
 
   }
 
+};
+
+
+
+///
+/// \brief The SwapChainSupportDetails struct
+///
+struct SwapChainSupportDetails
+{
+
+  VkSurfaceCapabilitiesKHR          capabilities;
+  std::vector< VkSurfaceFormatKHR > formats;
+  std::vector< VkPresentModeKHR >   presentModes;
 
 };
+
+
+
+///
+/// \brief querySwapChainSupport
+/// \param device
+/// \return
+///
+SwapChainSupportDetails
+querySwapChainSupport(
+                      VkPhysicalDevice device,
+                      VkSurfaceKHR     surface
+                      )
+{
+
+  SwapChainSupportDetails details;
+
+  //
+  // these functions all take the device and surface into account when
+  // determining capabilites
+  //
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR( device, surface, &details.capabilities );
+
+  uint32_t formatCount;
+  vkGetPhysicalDeviceSurfaceFormatsKHR( device, surface, &formatCount, nullptr );
+
+  if ( formatCount != 0 )
+  {
+
+    details.formats.resize( formatCount );
+    vkGetPhysicalDeviceSurfaceFormatsKHR( device, surface, &formatCount, details.formats.data( ) );
+
+  }
+
+  uint32_t presentModeCount;
+  vkGetPhysicalDeviceSurfacePresentModesKHR( device, surface, &presentModeCount, nullptr );
+
+  if ( presentModeCount != 0 )
+  {
+
+    details.presentModes.resize( presentModeCount );
+    vkGetPhysicalDeviceSurfacePresentModesKHR( device, surface, &presentModeCount, details.presentModes.data( ) );
+
+  }
+
+  return details;
+
+}
 
 
 
@@ -294,7 +356,141 @@ isDeviceSuitable(
 
   bool extensionsSupported = checkDeviceExtensionSupport( device );
 
-  return indices.isComplete( ) && extensionsSupported;
+  bool swapChainAdequate = false;
+  if ( extensionsSupported )
+  {
+
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport( device, surface );
+
+    swapChainAdequate = !swapChainSupport.formats.empty( ) && ! swapChainSupport.presentModes.empty( );
+
+  }
+
+  return indices.isComplete( ) && swapChainAdequate;
+
+}
+
+
+
+///
+/// \brief chooseSwapSurfaceFormat
+/// \param availableFormats
+/// \return
+///
+VkSurfaceFormatKHR
+chooseSwapSurfaceFormat( const std::vector< VkSurfaceFormatKHR > &availableFormats )
+{
+
+  //
+  // each VkSurfaceFormatKHR struct contains a format and colorSpace member.
+  // format specifies color channels and types.
+  // colorSpace indicates if the SRGB color space is suported (more accurate perceived colors).
+  //
+
+  //
+  // surface has no preferred format
+  //
+  if ( availableFormats.size( ) == 1 && availableFormats[ 0 ].format == VK_FORMAT_UNDEFINED )
+  {
+
+      return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+
+  }
+
+  //
+  // look for preferred combination if we can't choose our own
+  //
+  for ( const auto &availableFormat : availableFormats )
+  {
+
+    if ( availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM
+         && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR )
+    {
+
+      return availableFormat;
+
+    }
+
+  }
+
+  //
+  // all attempts to use our format failed. Just use first available option
+  //
+  return availableFormats[ 0 ];
+
+}
+
+
+
+///
+/// \brief chooseSwapPresentMode
+/// \param availablePresentModes
+/// \return
+///
+VkPresentModeKHR
+chooseSwapPresentMode( const std::vector< VkPresentModeKHR > &availablePresentModes )
+{
+
+  for ( const auto &availablePresentMode : availablePresentModes )
+  {
+
+    //
+    // triple buffering to avoid tearing with low latency
+    //
+    if ( availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR )
+    {
+
+      return availablePresentMode;
+
+    }
+
+  }
+
+  //
+  // guaranteed to be available
+  //
+  return VK_PRESENT_MODE_FIFO_KHR;
+
+}
+
+
+
+VkExtent2D
+chooseSwapExtent(
+                 const VkSurfaceCapabilitiesKHR &capabilites,
+                 const int                       width,
+                 const int                       height
+                 )
+{
+
+  //
+  // window resolution matches current extent
+  //
+  if ( capabilites.currentExtent.width != std::numeric_limits< uint32_t >::max( ) )
+  {
+
+    return capabilites.currentExtent;
+
+  }
+
+  //
+  // choose resolution that best matches window
+  //
+  VkExtent2D actualExtent = { static_cast< uint32_t >( width ),
+                              static_cast< uint32_t >( height ) };
+
+  //
+  // clamp width and height to be within allowed values
+  //
+  actualExtent.width = std::max( capabilites.minImageExtent.width,
+                                 std::min( capabilites.maxImageExtent.width,
+                                           actualExtent.width ) );
+
+  actualExtent.height = std::max( capabilites.minImageExtent.height,
+                                  std::min( capabilites.maxImageExtent.height,
+                                            actualExtent.height ) );
+
+  return actualExtent;
 
 }
 
@@ -716,7 +912,8 @@ VulkanContextGLFW::_createVulkanLogicalDevice( )
 
   createInfo.pEnabledFeatures = &deviceFeatures;
 
-  createInfo.enabledExtensionCount = 0;
+  createInfo.enabledExtensionCount   = deviceExtensions.size( );
+  createInfo.ppEnabledExtensionNames = deviceExtensions.data( );
 
   if ( enableValidationLayers )
   {
