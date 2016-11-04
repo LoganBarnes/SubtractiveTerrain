@@ -8,7 +8,7 @@
 
 #ifdef USE_DIRECT_X_12
 #include "DX12Generator.hpp"
-typedef DX12Generator GraphicsGen;
+typedef graphics::DX12Generator GraphicsGen;
 #else
 #include "VulkanGeneratorGLFW.hpp"
 typedef graphics::VulkanGeneratorGLFW GraphicsGen;
