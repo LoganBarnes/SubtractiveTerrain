@@ -1,6 +1,5 @@
 #include "VulkanContextGLFW.hpp"
 
-#include <vector>
 #include <iostream>
 #include <set>
 #include <algorithm>
@@ -510,7 +509,7 @@ VulkanContextGLFW::VulkanContextGLFW(
 {
 
   _initWindow( title, width, height ); // GLFW init
-  _initVulkan( title );
+  _initVulkan( title, width, height );
 
 }
 
@@ -635,14 +634,17 @@ VulkanContextGLFW::_initWindow(
 /// \brief VulkanContextGLFW::_initVulkan
 ///
 void
-VulkanContextGLFW::_initVulkan( const std::string &title )
+VulkanContextGLFW::_initVulkan(
+                               const std::string &title,
+                               const int          width,
+                               const int          height
+                               )
 {
 
   //
   // get number of available extentions
   //
   uint32_t extensionCount = 0;
-
   vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
 
   //
@@ -687,6 +689,18 @@ VulkanContextGLFW::_initVulkan( const std::string &title )
   // create device to interface with GPU
   //
   _createVulkanLogicalDevice( );
+
+  //
+  //
+  //
+  _createSwapChain( width, height );
+
+  //
+  // Literally views onto images.
+  // How to access an image and what part to access
+  //
+  _createImageViews( );
+
 
 } // VulkanContextGLFW::_initVulkan
 
@@ -940,6 +954,156 @@ VulkanContextGLFW::_createVulkanLogicalDevice( )
   vkGetDeviceQueue( device_, indices.presentFamily_,  0, &presentQueue_  );
 
 } // VulkanContextGLFW::_createVulkanLogicalDevice
+
+
+
+///
+/// \brief VulkanContextGLFW::_createSwapChain
+/// \param width
+/// \param height
+///
+void
+VulkanContextGLFW::_createSwapChain(
+                                    const int width,
+                                    const int height
+                                    )
+{
+
+  SwapChainSupportDetails swapChainSupport = querySwapChainSupport( physicalDevice_, surface_ );
+
+  VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat( swapChainSupport.formats      );
+  VkPresentModeKHR   presentMode   = chooseSwapPresentMode  ( swapChainSupport.presentModes );
+  VkExtent2D         extent        = chooseSwapExtent       ( swapChainSupport.capabilities, width, height );
+
+  //
+  // one more image than normally required to allow for triple buffering
+  //
+  uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+  if ( swapChainSupport.capabilities.maxImageCount > 0
+       && imageCount > swapChainSupport.capabilities.maxImageCount )
+  {
+
+    imageCount = swapChainSupport.capabilities.maxImageCount;
+
+  }
+
+  //
+  // swap chain structure
+  //
+  VkSwapchainCreateInfoKHR createInfo = {};
+  createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  createInfo.surface          = surface_;
+
+  createInfo.minImageCount    = imageCount;
+  createInfo.imageFormat      = surfaceFormat.format;
+  createInfo.imageColorSpace  = surfaceFormat.colorSpace;
+  createInfo.imageExtent      = extent;
+  createInfo.imageArrayLayers = 1;
+  createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+  QueueFamilyIndices indices = findQueueFamilies( physicalDevice_, surface_ );
+
+  uint32_t queueFamilyIndices[] = { static_cast< uint32_t >( indices.graphicsFamily_ ),
+                                    static_cast< uint32_t >( indices.presentFamily_ ) };
+
+  if ( indices.graphicsFamily_ != indices.presentFamily_ )
+  {
+
+    createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+    createInfo.queueFamilyIndexCount = 2;
+    createInfo.pQueueFamilyIndices   = queueFamilyIndices;
+
+  }
+  else
+  {
+
+    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  }
+
+  //
+  // no transformation and ignore alpha
+  //
+  createInfo.preTransform   = swapChainSupport.capabilities.currentTransform;
+  createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+  //
+  // clipping ignores pixels that can't be seen (eg. covered by another window)
+  //
+  createInfo.presentMode = presentMode;
+  createInfo.clipped     = VK_TRUE;
+
+  createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+  if ( vkCreateSwapchainKHR( device_, &createInfo, nullptr, swapChain_.replace( ) ) != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to create swap chain" );
+
+  }
+
+  vkGetSwapchainImagesKHR( device_, swapChain_, &imageCount, nullptr );
+
+  swapChainImages_.resize( imageCount );
+  vkGetSwapchainImagesKHR( device_, swapChain_, &imageCount, swapChainImages_.data( ) );
+
+  swapChainImageFormat_ = surfaceFormat.format;
+  swapChainExtent_      = extent;
+
+}
+
+
+
+///
+/// \brief VulkanContextGLFW::_createImageViews
+///
+void
+VulkanContextGLFW::_createImageViews( )
+{
+
+  uint32_t imageCount = swapChainImages_.size( );
+
+  swapChainImageViews_.resize( imageCount,
+                               VDeleter< VkImageView >{ device_, vkDestroyImageView } );
+
+  for ( uint32_t i = 0; i < imageCount; ++i )
+  {
+
+    VkImageViewCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image = swapChainImages_[ i ];
+
+    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D; // 1D, 2D, 3D, or cubemap
+    createInfo.format   = swapChainImageFormat_;
+
+    //
+    // default color channel mapping
+    //
+    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    //
+    // using images as color targets without mipmapping or layering
+    //
+    createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    createInfo.subresourceRange.baseMipLevel   = 0;
+    createInfo.subresourceRange.levelCount     = 1;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.layerCount     = 1;
+
+    if ( vkCreateImageView( device_, &createInfo, nullptr, swapChainImageViews_[ i ].replace( ) ) != VK_SUCCESS )
+    {
+
+      throw std::runtime_error( "Failed to create image views" );
+
+    }
+
+  }
+
+}
 
 
 

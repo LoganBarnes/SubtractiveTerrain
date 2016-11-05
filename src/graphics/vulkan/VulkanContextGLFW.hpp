@@ -4,6 +4,7 @@
 
 #include <string>
 #include <functional>
+#include <vector>
 #include <vulkan/vulkan.h>
 
 #include "GraphicsContext.hpp"
@@ -52,7 +53,7 @@ public:
   /// \brief makeWindowCurrent
   //////////////////////////////////////////////////
   virtual
-  void makeWindowCurrent( ) final;
+  void makeWindowCurrent ( ) final;
 
 
 private:
@@ -73,7 +74,11 @@ private:
   /// \brief _initVulkan
   /// \param title
   //////////////////////////////////////////////////
-  void _initVulkan ( const std::string &title );
+  void _initVulkan (
+                    const std::string &title,
+                    const int          width,
+                    const int          height
+                    );
 
   //////////////////////////////////////////////////
   /// \brief _createVulkanInstance
@@ -101,6 +106,21 @@ private:
   //////////////////////////////////////////////////
   void _createVulkanLogicalDevice ( );
 
+  //////////////////////////////////////////////////
+  /// \brief _createSwapChain
+  /// \param width
+  /// \param height
+  //////////////////////////////////////////////////
+  void _createSwapChain (
+                         const int width,
+                         const int height
+                         );
+
+  //////////////////////////////////////////////////
+  /// \brief _createImageViews
+  //////////////////////////////////////////////////
+  void _createImageViews( );
+
 
   //
   // member vars
@@ -125,8 +145,18 @@ private:
     vkDestroyDevice
   };
 
+  VDeleter< VkSwapchainKHR > swapChain_ {
+    device_, vkDestroySwapchainKHR
+  };
+
+  std::vector< VkImage > swapChainImages_;
+  VkFormat swapChainImageFormat_;
+  VkExtent2D swapChainExtent_;
+
   VkQueue graphicsQueue_;
   VkQueue presentQueue_;
+
+  std::vector< VDeleter< VkImageView > > swapChainImageViews_;
 
 };
 
