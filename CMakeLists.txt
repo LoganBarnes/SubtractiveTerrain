@@ -80,18 +80,11 @@ set(
     # rendering
     ${SRC_DIR}/rendering/IOHandler.cpp
 
-    # graphics
-    # ${SRC_DIR}/graphics/GraphicsGenerator.cpp
-    # ${SRC_DIR}/graphics/GraphicsHandler.cpp
-
     # graphics/vulkan
-    # ${SRC_DIR}/graphics/vulkan/VulkanGeneratorGLFW.cpp
-    # ${SRC_DIR}/graphics/vulkan/VulkanContextGLFW.cpp
     ${SRC_DIR}/graphics/vulkan/VulkanGlfwWrapper.cpp
 
     # graphics/dx12
-    # ${SRC_DIR}/graphics/dx12/DX12Generator.cpp
-    # ${SRC_DIR}/graphics/dx12/DX12Context.cpp
+    # ${SRC_DIR}/graphics/vulkan/DX12Wrapper.cpp
 
     # world
     ${SRC_DIR}/world/World.cpp
