@@ -2,6 +2,7 @@
 #define GraphicsHandler_hpp
 
 #include <memory>
+#include <string>
 
 
 namespace graphics
@@ -37,6 +38,11 @@ public:
   void makeContextCurrent ( );
   void updateWindow ( );
   bool checkWindowShouldClose ( );
+  void createRenderPass ( );
+  void createGraphicsPipeline (
+                               const std::string &vertFile,
+                               const std::string &fragFile
+                               );
 
 
 private:

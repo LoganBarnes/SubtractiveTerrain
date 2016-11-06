@@ -3,15 +3,17 @@
 #include <iostream>
 #include <csignal>
 #include <random>
-#include "GraphicsHandler.hpp"
+//#include "GraphicsHandler.hpp"
+#include "SubtractiveTerrainConfig.hpp"
 
 
 #ifdef USE_DIRECT_X_12
 #include "DX12Generator.hpp"
 typedef graphics::DX12Generator GraphicsGen;
 #else
-#include "VulkanGeneratorGLFW.hpp"
-typedef graphics::VulkanGeneratorGLFW GraphicsGen;
+//#include "VulkanGeneratorGLFW.hpp"
+//typedef graphics::VulkanGeneratorGLFW GraphicsGen;
+#include "VulkanGlfwWrapper.hpp"
 #endif
 
 
@@ -68,9 +70,16 @@ IOHandler::IOHandler(
   try
   {
 
-    upGraphicsGen_ = std::unique_ptr< graphics::GraphicsGenerator >( new GraphicsGen( ) );
+    upGraphics_ = std::unique_ptr< graphics::VulkanGlfwWrapper >( new graphics::VulkanGlfwWrapper( ) );
 
-    graphicses_.push_back( upGraphicsGen_->generateHandler( "Subtractive Terrain" ) );
+    graphics::VulkanGlfwWrapper &graphics = *upGraphics_;
+
+    graphics.createNewWindow( "Subtractive Terrain", 1024, 720 );
+
+    graphics.createRenderPass( );
+
+    graphics.createGraphicsPipeline( SHADER_PATH + "default/vert.spv",
+                                     SHADER_PATH + "default/frag.spv" );
 
   }
   catch ( const std::exception &e )
@@ -103,20 +112,9 @@ void
 IOHandler::showWorld( const double )
 {
 
-  //
-  // render to all windows
-  //
-  for ( graphics::GraphicsHandler & graphics : graphicses_ )
-  {
+  /// \todo: render stuff
 
-    graphics.makeContextCurrent( );
-    graphics.clearViewport( );
-
-    /// \todo: render stuff
-
-    graphics.updateWindow( );
-
-  }
+  upGraphics_->updateWindow( );
 
 } // IOHandler::showWorld
 
@@ -131,19 +129,15 @@ void
 IOHandler::updateIO( )
 {
 
-  upGraphicsGen_->checkEvents( );
+  upGraphics_->checkInputEvents( );
 
   exitRequested_ |= signalCaught;
 
   //
-  // check all windows for exit requests
+  // check windows for exit requests
   //
-  for ( graphics::GraphicsHandler & graphics : graphicses_ )
-  {
+  exitRequested_ |= upGraphics_->checkWindowShouldClose( );
 
-    exitRequested_ |= graphics.checkWindowShouldClose( );
-
-  }
 
 }
 

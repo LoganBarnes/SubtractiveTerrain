@@ -27,7 +27,7 @@ VulkanGeneratorGLFW::VulkanGeneratorGLFW( )
   if ( !_initGLFW( ) )
   {
 
-    throw( std::runtime_error( "GLFW init failed" ) );
+    throw std::runtime_error( "GLFW init failed" );
 
   }
 

@@ -1,5 +1,5 @@
-#ifndef VulkanContextGLFW_hpp
-#define VulkanContextGLFW_hpp
+#ifndef VulkanGlfwWrapper_hpp
+#define VulkanGlfwWrapper_hpp
 
 
 #include <string>
@@ -7,7 +7,6 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-#include "GraphicsContext.hpp"
 #include "VDeleter.hpp"
 
 
@@ -20,43 +19,35 @@ namespace graphics
 
 
 ///
-/// \brief The VulkanContextGLFW class
+/// \brief The VulkanGlfwWrapper class
 ///
-class VulkanContextGLFW : public GraphicsContext
+class VulkanGlfwWrapper
 {
 
 public:
 
-  VulkanContextGLFW(
-                    const std::string title,
-                    const int         width,
-                    const int         height
-                    );
+  ///////////////////////////////////////////////////////////////////////////////////
+  //
+  //  Initialization functions
+  //
+  ///////////////////////////////////////////////////////////////////////////////////
 
-  ~VulkanContextGLFW( );
+  VulkanGlfwWrapper( );
 
+  ~VulkanGlfwWrapper( );
 
-  //////////////////////////////////////////////////
-  /// \brief updateWindow
-  //////////////////////////////////////////////////
-  virtual
-  void updateWindow ( ) final;
-
-  //////////////////////////////////////////////////
-  /// \brief checkWindowShouldClose
-  /// \return
-  //////////////////////////////////////////////////
-  virtual
-  bool checkWindowShouldClose ( ) final;
-
-  //////////////////////////////////////////////////
-  /// \brief makeWindowCurrent
-  //////////////////////////////////////////////////
-  virtual
-  void makeWindowCurrent ( ) final;
 
   virtual
-  void createRenderPass ( ) final;
+  void createNewWindow(
+                       const std::string &title,
+                       const int          width,
+                       const int          height
+                       );
+
+
+  virtual
+  void createRenderPass ( );
+
 
   ///
   /// \brief createGraphicsPipeline
@@ -67,10 +58,51 @@ public:
   void createGraphicsPipeline (
                                const std::string &vertFile,
                                const std::string &fragFile
-                               ) final;
+                               );
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////
+  //
+  //  Render loop functions
+  //
+  ///////////////////////////////////////////////////////////////////////////////////
+
+
+  //////////////////////////////////////////////////
+  /// \brief checkInputEvents
+  //////////////////////////////////////////////////
+  virtual
+  void checkInputEvents ( );
+
+  //////////////////////////////////////////////////
+  /// \brief updateWindow
+  //////////////////////////////////////////////////
+  virtual
+  void updateWindow ( );
+
+
+  //////////////////////////////////////////////////
+  /// \brief checkWindowShouldClose
+  /// \return
+  //////////////////////////////////////////////////
+  virtual
+  bool checkWindowShouldClose ( );
 
 
 private:
+
+  //////////////////////////////////////////////////
+  /// \brief _initGlfw
+  //////////////////////////////////////////////////
+  bool _initGlfw( );
+
+
+  //////////////////////////////////////////////////
+  /// \brief _terminateGlfw
+  //////////////////////////////////////////////////
+  void _terminateGlfw( );
+
 
   //////////////////////////////////////////////////
   /// \brief _initWindow
@@ -98,26 +130,31 @@ private:
   /// \brief _createVulkanInstance
   /// \param title
   //////////////////////////////////////////////////
+  virtual
   void _createVulkanInstance ( const std::string &title );
 
   //////////////////////////////////////////////////
   /// \brief _setUpVulkanDebugCallback
   //////////////////////////////////////////////////
+  virtual
   void _setUpVulkanDebugCallback ( );
 
   //////////////////////////////////////////////////
   /// \brief _createVulkanSurface
   //////////////////////////////////////////////////
+  virtual
   void _createVulkanSurface ( );
 
   //////////////////////////////////////////////////
   /// \brief _setUpVulkanPhysicalDevice
   //////////////////////////////////////////////////
+  virtual
   void _setUpVulkanPhysicalDevice ( );
 
   //////////////////////////////////////////////////
   /// \brief _createVulkanLogicalDevice
   //////////////////////////////////////////////////
+  virtual
   void _createVulkanLogicalDevice ( );
 
   //////////////////////////////////////////////////
@@ -125,6 +162,7 @@ private:
   /// \param width
   /// \param height
   //////////////////////////////////////////////////
+  virtual
   void _createSwapChain (
                          const int width,
                          const int height
@@ -133,7 +171,11 @@ private:
   //////////////////////////////////////////////////
   /// \brief _createImageViews
   //////////////////////////////////////////////////
+  virtual
   void _createImageViews ( );
+
+
+  bool glfwInitialized_;
 
 
   //
@@ -198,4 +240,4 @@ private:
 } // namespace graphics
 
 
-#endif // VulkanContextGLFW_hpp
+#endif // VulkanGlfwWrapper_hpp

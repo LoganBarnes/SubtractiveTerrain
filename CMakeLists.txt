@@ -13,8 +13,9 @@ set ( PROJECT_VERSION_PATCH 0 )
 set( SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
 # other paths
-set( RES_PATH   ${PROJECT_SOURCE_DIR}/res        )
-set( THIRDPARTY ${PROJECT_SOURCE_DIR}/thirdparty )
+set( RES_PATH    ${PROJECT_SOURCE_DIR}/res        )
+set( SHADER_PATH ${RES_PATH}/shaders              )
+set( THIRDPARTY  ${PROJECT_SOURCE_DIR}/thirdparty )
 
 set( PROJECT_CONFIG_FILE ${SRC_DIR}/common/ProjectConfig.hpp.in )
 
@@ -80,12 +81,13 @@ set(
     ${SRC_DIR}/rendering/IOHandler.cpp
 
     # graphics
-    ${SRC_DIR}/graphics/GraphicsGenerator.cpp
-    ${SRC_DIR}/graphics/GraphicsHandler.cpp
+    # ${SRC_DIR}/graphics/GraphicsGenerator.cpp
+    # ${SRC_DIR}/graphics/GraphicsHandler.cpp
 
     # graphics/vulkan
-    ${SRC_DIR}/graphics/vulkan/VulkanGeneratorGLFW.cpp
-    ${SRC_DIR}/graphics/vulkan/VulkanContextGLFW.cpp
+    # ${SRC_DIR}/graphics/vulkan/VulkanGeneratorGLFW.cpp
+    # ${SRC_DIR}/graphics/vulkan/VulkanContextGLFW.cpp
+    ${SRC_DIR}/graphics/vulkan/VulkanGlfwWrapper.cpp
 
     # graphics/dx12
     # ${SRC_DIR}/graphics/dx12/DX12Generator.cpp

@@ -42,6 +42,15 @@ public:
   virtual
   void makeWindowCurrent ( ) = 0;
 
+  virtual
+  void createRenderPass ( ) = 0;
+
+  virtual
+  void createGraphicsPipeline (
+                               const std::string &vertFile,
+                               const std::string &fragFile
+                               ) = 0;
+
 
 };
 

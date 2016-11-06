@@ -100,4 +100,33 @@ GraphicsHandler::checkWindowShouldClose( )
 
 
 
+void
+GraphicsHandler::createRenderPass( )
+{
+
+  upContext_->createRenderPass( );
+
+}
+
+
+
+
+///
+/// \brief GraphicsHandler::createGraphicsPipeline
+/// \param vertFile
+/// \param fragFile
+///
+void
+GraphicsHandler::createGraphicsPipeline(
+                                        const std::string &vertFile,
+                                        const std::string &fragFile
+                                        )
+{
+
+  upContext_->createGraphicsPipeline( vertFile, fragFile );
+
+}
+
+
+
 } // namespace graphics

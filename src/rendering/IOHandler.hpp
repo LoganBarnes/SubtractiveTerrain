@@ -10,8 +10,9 @@
 namespace graphics
 {
 
-class GraphicsGenerator;
-class GraphicsHandler;
+//class GraphicsGenerator;
+//class GraphicsHandler;
+class VulkanGlfwWrapper;
 
 }
 
@@ -83,9 +84,11 @@ protected:
   World &world_;
   bool exitRequested_;
 
-  std::unique_ptr< graphics::GraphicsGenerator > upGraphicsGen_;
+  std::unique_ptr< graphics::VulkanGlfwWrapper > upGraphics_;
 
-  std::vector< std::reference_wrapper< graphics::GraphicsHandler > > graphicses_;
+//  std::unique_ptr< graphics::GraphicsGenerator > upGraphicsGen_;
+
+//  std::vector< std::reference_wrapper< graphics::GraphicsHandler > > graphicses_;
 
 };
 

@@ -1,4 +1,4 @@
-#include "VulkanContextGLFW.hpp"
+#include "VulkanGlfwWrapper.hpp"
 
 #include <iostream>
 #include <set>
@@ -12,6 +12,16 @@
 namespace graphics
 {
 
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////             START HELPERS              ////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 //
 // Vulkan helper functions and variables for initialization
@@ -553,17 +563,72 @@ createShaderModule(
 } // namespace
 
 
-VulkanContextGLFW::VulkanContextGLFW(
-                                     const std::string title,
-                                     const int         width,
-                                     const int         height
-                                     )
-  :
-  GraphicsContext( title, width, height )
-  , physicalDevice_( VK_NULL_HANDLE )
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////              END HELPERS               ////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//
+//  Initialization functions
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+VulkanGlfwWrapper::VulkanGlfwWrapper(  )
+  : glfwInitialized_( false )
+  , pWindow_        ( nullptr )
+  , physicalDevice_ ( VK_NULL_HANDLE )
 {
 
-  _initWindow( title, width, height ); // GLFW init
+  if ( !_initGlfw( ) )
+  {
+    throw std::runtime_error( "Failed to initialize GLFW" );
+
+  }
+
+
+}
+
+
+
+///
+/// \brief VulkanGlfwWrapper::~VulkanGlfwWrapper
+///
+VulkanGlfwWrapper::~VulkanGlfwWrapper( )
+{
+
+  if ( pWindow_ )
+  {
+
+    glfwDestroyWindow( pWindow_ );
+
+  }
+
+  _terminateGlfw( );
+
+}
+
+
+
+void
+VulkanGlfwWrapper::createNewWindow(
+                                   const std::string &title,
+                                   const int          width,
+                                   const int          height
+                                   )
+{
+
+  _initWindow( title, width, height );
   _initVulkan( title, width, height );
 
 }
@@ -571,60 +636,10 @@ VulkanContextGLFW::VulkanContextGLFW(
 
 
 ///
-/// \brief VulkanContextGLFW::~VulkanContextGLFW
-///
-VulkanContextGLFW::~VulkanContextGLFW( )
-{
-
-  glfwDestroyWindow( pWindow_ );
-
-}
-
-
-
-///
-/// \brief VulkanContextGLFW::showBuffer
+/// \brief VulkanGlfwWrapper::createRenderPass
 ///
 void
-VulkanContextGLFW::updateWindow( )
-{
-
-  glfwSwapBuffers( pWindow_ );
-
-}
-
-
-
-///
-/// \brief VulkanContextGLFW::checkWindowShouldClose
-///
-bool
-VulkanContextGLFW::checkWindowShouldClose( )
-{
-
-  return glfwWindowShouldClose( pWindow_ ) != 0;
-
-}
-
-
-
-///
-/// \brief VulkanContextGLFW::makeWindowCurrent
-///
-void
-VulkanContextGLFW::makeWindowCurrent( )
-{
-
-  // glfwMakeContextCurrent( pWindow_ );
-
-}
-
-
-///
-/// \brief VulkanContextGLFW::createRenderPass
-///
-void
-VulkanContextGLFW::createRenderPass()
+VulkanGlfwWrapper::createRenderPass()
 {
 
   VkAttachmentDescription colorAttachment = {};
@@ -670,12 +685,12 @@ VulkanContextGLFW::createRenderPass()
 
 
 ///
-/// \brief VulkanContextGLFW::createGraphicsPipeline
+/// \brief VulkanGlfwWrapper::createGraphicsPipeline
 /// \param vertFile
 /// \param fragFile
 ///
 void
-VulkanContextGLFW::createGraphicsPipeline(
+VulkanGlfwWrapper::createGraphicsPipeline(
                                           const std::string &vertFile,
                                           const std::string &fragFile
                                           )
@@ -882,14 +897,143 @@ VulkanContextGLFW::createGraphicsPipeline(
 
 
 
+///////////////////////////////////////////////////////////////////////////////////
+//
+//  Render loop functions
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////
+/// \brief VulkanGlfwWrapper::checkInputEvents
+//////////////////////////////////////////////////
+void
+VulkanGlfwWrapper::checkInputEvents ( )
+{
+
+  glfwPollEvents( );
+
+}
+
+
 ///
-/// \brief VulkanContextGLFW::_initWindow
+/// \brief VulkanGlfwWrapper::showBuffer
+///
+void
+VulkanGlfwWrapper::updateWindow( )
+{
+
+  glfwSwapBuffers( pWindow_ );
+
+}
+
+
+
+///
+/// \brief VulkanGlfwWrapper::checkWindowShouldClose
+///
+bool
+VulkanGlfwWrapper::checkWindowShouldClose( )
+{
+
+  return glfwWindowShouldClose( pWindow_ ) != 0;
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////        START PRIVATE FUNCTIONS         ////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+///
+/// \brief VulkanGlfwWrapper::_initGlfw
+/// \return
+///
+bool
+VulkanGlfwWrapper::_initGlfw( )
+{
+
+  //
+  // set error callback before anything else to get
+  // error messages from future calls
+  //
+//  glfwSetErrorCallback( CallbackSingleton::errorCallback );
+
+  //
+  // If we aren't already initialized then try
+  // to initialized GLFW.
+  //
+  if ( !glfwInitialized_ && !glfwInit( ) )
+  {
+
+    //
+    // init failed
+    //
+    return false;
+
+  }
+
+  std::cout << "Initialized GLFW Version: ";
+  std::cout << glfwGetVersionString( ) << std::endl;
+
+
+  glfwInitialized_ = true;
+
+  //
+  // using vulkan so we don't need OpenGL
+  //
+  glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
+
+  //
+  // temporary until we handle resizing
+  //
+  glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
+
+  return true;
+
+} // VulkanGlfwWrapper::_initGlfw
+
+
+
+
+
+///
+/// \brief VulkanGlfwWrapper::_terminateGlfw
+///
+void
+VulkanGlfwWrapper::_terminateGlfw( )
+{
+
+  if ( glfwInitialized_ )
+  {
+
+    glfwTerminate( );
+    glfwInitialized_ = false;
+    //
+    // ready to be initialized again if necessary
+    //
+    std::cout << "Terminated GLFW" << std::endl;
+
+  }
+
+}
+
+
+
+
+///
+/// \brief VulkanGlfwWrapper::_initWindow
 /// \param title
 /// \param width
 /// \param height
 ///
 void
-VulkanContextGLFW::_initWindow(
+VulkanGlfwWrapper::_initWindow(
                                const std::string title,
                                const int         width,
                                const int         height
@@ -924,12 +1068,9 @@ VulkanContextGLFW::_initWindow(
   if ( !pWindow_ )
   {
 
-    throw( std::runtime_error( "GLFW window creation failed" ) );
+    throw std::runtime_error( "GLFW window creation failed" );
 
   }
-
-  /* Make the window's context current */
-  makeWindowCurrent( );
 
   glfwSwapInterval( 0 );
 
@@ -947,10 +1088,10 @@ VulkanContextGLFW::_initWindow(
 
 
 ///
-/// \brief VulkanContextGLFW::_initVulkan
+/// \brief VulkanGlfwWrapper::_initVulkan
 ///
 void
-VulkanContextGLFW::_initVulkan(
+VulkanGlfwWrapper::_initVulkan(
                                const std::string &title,
                                const int          width,
                                const int          height
@@ -1018,18 +1159,18 @@ VulkanContextGLFW::_initVulkan(
   _createImageViews( );
 
 
-} // VulkanContextGLFW::_initVulkan
+} // VulkanGlfwWrapper::_initVulkan
 
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief VulkanContextGLFW::_createVulkanInstance
+/// \brief VulkanGlfwWrapper::_createVulkanInstance
 /// \param title
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////////////////////////
 void
-VulkanContextGLFW::_createVulkanInstance( const std::string &title )
+VulkanGlfwWrapper::_createVulkanInstance( const std::string &title )
 {
 
   //
@@ -1093,17 +1234,17 @@ VulkanContextGLFW::_createVulkanInstance( const std::string &title )
 
   }
 
-} // VulkanContextGLFW::_createVulkanInstance
+} // VulkanGlfwWrapper::_createVulkanInstance
 
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief VulkanContextGLFW::_setUpVulkanDebugCallback
+/// \brief VulkanGlfwWrapper::_setUpVulkanDebugCallback
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////////////////////////
 void
-VulkanContextGLFW::_setUpVulkanDebugCallback( )
+VulkanGlfwWrapper::_setUpVulkanDebugCallback( )
 {
 
   if ( !enableValidationLayers )
@@ -1131,17 +1272,17 @@ VulkanContextGLFW::_setUpVulkanDebugCallback( )
 
   }
 
-} // VulkanContextGLFW::_setUpVulkanDebugCallback
+} // VulkanGlfwWrapper::_setUpVulkanDebugCallback
 
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief VulkanContextGLFW::_createVulkanSurface
+/// \brief VulkanGlfwWrapper::_createVulkanSurface
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////////////////////////
 void
-VulkanContextGLFW::_createVulkanSurface( )
+VulkanGlfwWrapper::_createVulkanSurface( )
 {
 
   if ( glfwCreateWindowSurface( instance_, pWindow_, nullptr, surface_.replace( ) ) != VK_SUCCESS )
@@ -1156,12 +1297,12 @@ VulkanContextGLFW::_createVulkanSurface( )
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief VulkanContextGLFW::_setUpVulkanPhysicalDevice
+/// \brief VulkanGlfwWrapper::_setUpVulkanPhysicalDevice
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////////////////////////
 void
-VulkanContextGLFW::_setUpVulkanPhysicalDevice( )
+VulkanGlfwWrapper::_setUpVulkanPhysicalDevice( )
 {
 
   uint32_t deviceCount = 0;
@@ -1200,17 +1341,17 @@ VulkanContextGLFW::_setUpVulkanPhysicalDevice( )
 
   }
 
-} // VulkanContextGLFW::_setUpVulkanPhysicalDevice
+} // VulkanGlfwWrapper::_setUpVulkanPhysicalDevice
 
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief VulkanContextGLFW::_createVulkanLogicalDevice
+/// \brief VulkanGlfwWrapper::_createVulkanLogicalDevice
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////////////////////////
 void
-VulkanContextGLFW::_createVulkanLogicalDevice( )
+VulkanGlfwWrapper::_createVulkanLogicalDevice( )
 {
 
   QueueFamilyIndices indices = findQueueFamilies( physicalDevice_, surface_ );
@@ -1269,17 +1410,17 @@ VulkanContextGLFW::_createVulkanLogicalDevice( )
   vkGetDeviceQueue( device_, indices.graphicsFamily_, 0, &graphicsQueue_ );
   vkGetDeviceQueue( device_, indices.presentFamily_,  0, &presentQueue_  );
 
-} // VulkanContextGLFW::_createVulkanLogicalDevice
+} // VulkanGlfwWrapper::_createVulkanLogicalDevice
 
 
 
 ///
-/// \brief VulkanContextGLFW::_createSwapChain
+/// \brief VulkanGlfwWrapper::_createSwapChain
 /// \param width
 /// \param height
 ///
 void
-VulkanContextGLFW::_createSwapChain(
+VulkanGlfwWrapper::_createSwapChain(
                                     const int width,
                                     const int height
                                     )
@@ -1372,10 +1513,10 @@ VulkanContextGLFW::_createSwapChain(
 
 
 ///
-/// \brief VulkanContextGLFW::_createImageViews
+/// \brief VulkanGlfwWrapper::_createImageViews
 ///
 void
-VulkanContextGLFW::_createImageViews( )
+VulkanGlfwWrapper::_createImageViews( )
 {
 
   uint32_t imageCount = swapChainImages_.size( );
@@ -1421,6 +1562,14 @@ VulkanContextGLFW::_createImageViews( )
 
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////         END PRIVATE FUNCTIONS          ////////////////////
+///////////////////////                                        ////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 
 } // namespace graphics
