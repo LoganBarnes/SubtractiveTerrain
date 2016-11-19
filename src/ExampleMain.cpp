@@ -35,7 +35,7 @@ main(
     // and ioHandler to interface between the
     // world and the user
     //
-    srt::World world;
+    srt::World     world;
     srt::IOHandler renderer( world );
 
     //

@@ -23,6 +23,7 @@ namespace srt
 
 
 class World;
+class TerrainCallback;
 
 
 /////////////////////////////////////////////
@@ -47,7 +48,6 @@ public:
   ///////////////////////////////////////////////////////////////
   /// \brief ~Renderer
   ///////////////////////////////////////////////////////////////
-  virtual
   ~IOHandler( );
 
 
@@ -72,6 +72,17 @@ public:
 
 
   ///////////////////////////////////////////////////////////////
+  /// \brief onLoopExit
+  ///
+  ///        Allows for any synchronization or clean up that
+  ///        needs to be completed before destruction
+  ///
+  ///////////////////////////////////////////////////////////////
+  virtual
+  void onLoopExit ( );
+
+
+  ///////////////////////////////////////////////////////////////
   /// \brief isExitRequested
   /// \return true if the user requested to exit the program
   ///////////////////////////////////////////////////////////////
@@ -85,10 +96,7 @@ protected:
   bool exitRequested_;
 
   std::unique_ptr< graphics::VulkanGlfwWrapper > upGraphics_;
-
-//  std::unique_ptr< graphics::GraphicsGenerator > upGraphicsGen_;
-
-//  std::vector< std::reference_wrapper< graphics::GraphicsHandler > > graphicses_;
+  std::unique_ptr< TerrainCallback >             upCallback_;
 
 };
 

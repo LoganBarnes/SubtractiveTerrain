@@ -3,17 +3,14 @@
 #include <iostream>
 #include <csignal>
 #include <random>
-//#include "GraphicsHandler.hpp"
 #include "SubtractiveTerrainConfig.hpp"
 
 
 #ifdef USE_DIRECT_X_12
-#include "DX12Generator.hpp"
-typedef graphics::DX12Generator GraphicsGen;
+#include "DX12Wrapper.hpp"
 #else
-//#include "VulkanGeneratorGLFW.hpp"
-//typedef graphics::VulkanGeneratorGLFW GraphicsGen;
 #include "VulkanGlfwWrapper.hpp"
+#include "TerrainCallback.hpp"
 #endif
 
 
@@ -41,6 +38,8 @@ signalHandler( int signum )
 
 }
 
+
+
 }
 
 
@@ -56,6 +55,7 @@ IOHandler::IOHandler(
   :
   world_          ( world )
   , exitRequested_( false )
+  , upCallback_   ( new TerrainCallback( ) )
 {
 
   signal ( SIGINT, signalHandler );
@@ -70,16 +70,27 @@ IOHandler::IOHandler(
   try
   {
 
-    upGraphics_ = std::unique_ptr< graphics::VulkanGlfwWrapper >( new graphics::VulkanGlfwWrapper( ) );
+    upGraphics_ =
+      std::unique_ptr< graphics::VulkanGlfwWrapper >( new graphics::VulkanGlfwWrapper( ) );
 
     graphics::VulkanGlfwWrapper &graphics = *upGraphics_;
+
+    graphics.setCallback( upCallback_.get( ) );
 
     graphics.createNewWindow( "Subtractive Terrain", 1024, 720 );
 
     graphics.createRenderPass( );
 
     graphics.createGraphicsPipeline( SHADER_PATH + "default/vert.spv",
-                                     SHADER_PATH + "default/frag.spv" );
+                                    SHADER_PATH + "default/frag.spv" );
+
+    graphics.createFrameBuffer( );
+
+    graphics.createCommandPool( );
+
+    graphics.createCommandBuffers( );
+
+    graphics.createSemaphores( );
 
   }
   catch ( const std::exception &e )
@@ -102,6 +113,7 @@ IOHandler::~IOHandler( )
 {}
 
 
+
 /////////////////////////////////////////////
 /// \brief Renderer::render
 /// \param alpha
@@ -114,7 +126,7 @@ IOHandler::showWorld( const double )
 
   /// \todo: render stuff
 
-  upGraphics_->updateWindow( );
+  upGraphics_->drawFrame( );
 
 } // IOHandler::showWorld
 
@@ -138,6 +150,21 @@ IOHandler::updateIO( )
   //
   exitRequested_ |= upGraphics_->checkWindowShouldClose( );
 
+
+}
+
+
+
+/////////////////////////////////////////////
+/// \brief IOHandler::onLoopExit
+///
+/// \author Logan Barnes
+/////////////////////////////////////////////
+void
+IOHandler::onLoopExit( )
+{
+
+  upGraphics_->syncDevice( );
 
 }
 

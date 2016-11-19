@@ -1,3 +1,6 @@
+#ifndef VDeleter_hpp
+#define VDeleter_hpp
+
 
 namespace
 {
@@ -254,3 +257,7 @@ private:
 
 
 };
+
+
+#endif // VDeleter_hpp
+

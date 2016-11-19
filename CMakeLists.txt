@@ -64,8 +64,8 @@ set(
     PROJECT_INCLUDE_DIRS
     ${SRC_DIR}/common
     ${SRC_DIR}/driver
-    ${SRC_DIR}/rendering
-    ${SRC_DIR}/graphics
+    ${SRC_DIR}/io
+    ${SRC_DIR}/graphics/glfw
     ${SRC_DIR}/graphics/vulkan
     ${SRC_DIR}/world
     )
@@ -78,7 +78,12 @@ set(
     ${SRC_DIR}/driver/Driver.cpp
 
     # rendering
-    ${SRC_DIR}/rendering/IOHandler.cpp
+    ${SRC_DIR}/io/IOHandler.cpp
+    ${SRC_DIR}/io/TerrainCallback.cpp
+
+    # graphics/glfw
+    ${SRC_DIR}/graphics/glfw/GlfwWrapper.cpp
+    ${SRC_DIR}/graphics/glfw/CallbackSingleton.cpp
 
     # graphics/vulkan
     ${SRC_DIR}/graphics/vulkan/VulkanGlfwWrapper.cpp
@@ -95,7 +100,7 @@ set(
 set(
     PROJECT_INSTALL_HEADERS
     ${SRC_DIR}/driver/Driver.hpp
-    ${SRC_DIR}/rendering/IOHandler.hpp
+    ${SRC_DIR}/io/IOHandler.hpp
     ${SRC_DIR}/world/World.hpp
     )
 

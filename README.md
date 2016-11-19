@@ -17,7 +17,7 @@ cd run
 Windows
 -------
 
-Ensure the *MSBuild.exe* and Vulkan SDK locations are added to the environment path variable.
+Ensure the Vulkan SDK location is added to the environment path and Visual Studio has been installed.
 
 ```bash
 cd run

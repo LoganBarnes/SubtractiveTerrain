@@ -5,11 +5,11 @@ rem the MSBuild.exe path will already be set
 
 SET RUN_DIR="%CD%"
 
-IF EXIST _build GOTO NOWINDIR
+IF EXIST _build GOTO SKIPBUILDDIR
 mkdir _build
-:NOWINDIR
+:SKIPBUILDDIR
 
 cd _build
 cmake -DCMAKE_INSTALL_PREFIX=%RUN_DIR% ..\..
-cmake --build . --target INSTALL --config Debug
+cmake --build . --target INSTALL --config Release
 cd ..

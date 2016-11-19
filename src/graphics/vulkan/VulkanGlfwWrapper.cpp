@@ -5,8 +5,7 @@
 #include <algorithm>
 #include <fstream>
 
-#define GLFW_INCLUDE_GL_3
-#include "GLFW/glfw3.h"
+#include "GlfwWrapper.hpp"
 
 
 namespace graphics
@@ -182,7 +181,7 @@ getRequiredExtensions( )
   std::vector< const char* > extensions;
 
   unsigned int glfwExtensionCount = 0;
-  const char**glfwExtensions( glfwGetRequiredInstanceExtensions( &glfwExtensionCount ) );
+  const char **glfwExtensions( GlfwWrapper::getRequiredInstanceExtensions( &glfwExtensionCount ) );
 
   for ( unsigned int i = 0; i < glfwExtensionCount; i++ )
   {
@@ -585,19 +584,8 @@ createShaderModule(
 
 
 VulkanGlfwWrapper::VulkanGlfwWrapper(  )
-  : glfwInitialized_( false )
-  , pWindow_        ( nullptr )
-  , physicalDevice_ ( VK_NULL_HANDLE )
-{
-
-  if ( !_initGlfw( ) )
-  {
-    throw std::runtime_error( "Failed to initialize GLFW" );
-
-  }
-
-
-}
+  : upGlfw_                 ( new graphics::GlfwWrapper( ) )
+{}
 
 
 
@@ -607,14 +595,17 @@ VulkanGlfwWrapper::VulkanGlfwWrapper(  )
 VulkanGlfwWrapper::~VulkanGlfwWrapper( )
 {
 
-  if ( pWindow_ )
+  if ( commandBuffers_.size( ) > 0 )
   {
 
-    glfwDestroyWindow( pWindow_ );
+    vkFreeCommandBuffers(
+                         device_,
+                         commandPool_,
+                         commandBuffers_.size( ),
+                         commandBuffers_.data( )
+                         );
 
   }
-
-  _terminateGlfw( );
 
 }
 
@@ -628,7 +619,7 @@ VulkanGlfwWrapper::createNewWindow(
                                    )
 {
 
-  _initWindow( title, width, height );
+  upGlfw_->createNewWindow( title, width, height );
   _initVulkan( title, width, height );
 
 }
@@ -664,6 +655,15 @@ VulkanGlfwWrapper::createRenderPass()
   subPass.colorAttachmentCount = 1;
   subPass.pColorAttachments    = &colorAttachmentRef;
 
+  VkSubpassDependency dependency = {};
+  dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
+  dependency.dstSubpass    = 0;
+  dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.srcAccessMask = 0;
+  dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+                             | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
   //
   // actual render pass creation
   //
@@ -673,6 +673,8 @@ VulkanGlfwWrapper::createRenderPass()
   renderPassInfo.pAttachments    = &colorAttachment;
   renderPassInfo.subpassCount    = 1;
   renderPassInfo.pSubpasses      = &subPass;
+  renderPassInfo.dependencyCount = 1;
+  renderPassInfo.pDependencies   = &dependency;
 
   if ( vkCreateRenderPass( device_, &renderPassInfo, nullptr, renderPass_.replace( ) ) != VK_SUCCESS )
   {
@@ -699,13 +701,21 @@ VulkanGlfwWrapper::createGraphicsPipeline(
   auto vertShaderCode = readFile( vertFile );
   auto fragShaderCode = readFile( fragFile );
 
-  createShaderModule( device_, vertShaderCode, vertShaderModule_ );
-  createShaderModule( device_, fragShaderCode, fragShaderModule_ );
+  VDeleter< VkShaderModule > vertShaderModule {
+    device_, vkDestroyShaderModule
+  };
+
+  VDeleter< VkShaderModule > fragShaderModule {
+    device_, vkDestroyShaderModule
+  };
+
+  createShaderModule( device_, vertShaderCode, vertShaderModule );
+  createShaderModule( device_, fragShaderCode, fragShaderModule );
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
   vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-  vertShaderStageInfo.module = vertShaderModule_;
+  vertShaderStageInfo.module = vertShaderModule;
   vertShaderStageInfo.pName  = "main";
   //
   // used to specify shader constants if necessary
@@ -716,7 +726,7 @@ VulkanGlfwWrapper::createGraphicsPipeline(
   VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
   fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-  fragShaderStageInfo.module = fragShaderModule_;
+  fragShaderStageInfo.module = fragShaderModule;
   fragShaderStageInfo.pName  = "main";
 
   VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo,
@@ -897,6 +907,165 @@ VulkanGlfwWrapper::createGraphicsPipeline(
 
 
 
+///
+/// \brief VulkanGlfwWrapper::createFrameBuffer
+///
+void
+VulkanGlfwWrapper::createFrameBuffer( )
+{
+
+  swapChainFramebuffers_.resize( swapChainImageViews_.size( ),
+                                 VDeleter< VkFramebuffer >{ device_, vkDestroyFramebuffer } );
+
+  size_t size = swapChainFramebuffers_.size( );
+
+  for ( size_t i = 0; i < swapChainImageViews_.size( ); ++i )
+  {
+
+    VkImageView attachments[] = { swapChainImageViews_[ i ] };
+
+    VkFramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass      = renderPass_;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments    = attachments;
+    framebufferInfo.width           = swapChainExtent_.width;
+    framebufferInfo.height          = swapChainExtent_.height;
+    framebufferInfo.layers          = 1;
+
+    if ( vkCreateFramebuffer( device_, &framebufferInfo, nullptr, swapChainFramebuffers_[ i ].replace( ) )
+         != VK_SUCCESS )
+    {
+
+      throw std::runtime_error( "Failed to create framebuffer" );
+
+    }
+
+  }
+
+}
+
+
+///
+/// \brief VulkanGlfwWrapper::createCommandPool
+///
+void
+VulkanGlfwWrapper::createCommandPool( )
+{
+
+  QueueFamilyIndices queueFamilyIndices = findQueueFamilies( physicalDevice_, surface_ );
+
+  VkCommandPoolCreateInfo poolInfo = {};
+  poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily_;
+  poolInfo.flags            = 0; // Optional
+
+  if ( vkCreateCommandPool( device_, &poolInfo, nullptr, commandPool_.replace( ) ) != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to create command pool" );
+
+  }
+
+}
+
+
+
+///
+/// \brief VulkanGlfwWrapper::createCommandBuffers
+///
+void
+VulkanGlfwWrapper::createCommandBuffers( )
+{
+
+  commandBuffers_.resize( swapChainFramebuffers_.size( ) );
+
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandPool        = commandPool_;
+  allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandBufferCount = static_cast< uint32_t >( commandBuffers_.size( ) );
+
+  if ( vkAllocateCommandBuffers( device_, &allocInfo, commandBuffers_.data( ) ) != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to allocate command buffers" );
+
+  }
+
+  size_t size = commandBuffers_.size( );
+
+  for ( size_t i = 0; i < size; ++i )
+  {
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags            = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    vkBeginCommandBuffer( commandBuffers_[ i ], &beginInfo );
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass  = renderPass_;
+    renderPassInfo.framebuffer = swapChainFramebuffers_[ i ];
+
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = swapChainExtent_;
+
+    VkClearValue clearColor        = { 0.0f, 0.0f, 0.0f, 1.0f };
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues    = &clearColor;
+
+    // vkCmd functions record commands to the command buffer
+    vkCmdBeginRenderPass( commandBuffers_[ i ], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
+
+    // bind graphics pipeline
+    vkCmdBindPipeline( commandBuffers_[ i ], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline_ );
+
+    // vertexCount, instanceCount, firstVertex, firstInstance
+    vkCmdDraw( commandBuffers_[ i ], 3, 1, 0, 0 );
+
+    // last command to finish render pass
+    vkCmdEndRenderPass( commandBuffers_[ i ] );
+
+    if ( vkEndCommandBuffer( commandBuffers_[ i ] ) != VK_SUCCESS )
+    {
+
+      throw std::runtime_error( "Failed to record command buffer" );
+
+    }
+
+  }
+
+}
+
+
+
+///
+/// \brief VulkanGlfwWrapper::createSemaphores
+///
+void
+VulkanGlfwWrapper::createSemaphores( )
+{
+
+  VkSemaphoreCreateInfo semaphoreInfo = {};
+  semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  if ( vkCreateSemaphore( device_, &semaphoreInfo, nullptr, imageAvailableSemaphore_.replace( ) )
+       != VK_SUCCESS
+       || vkCreateSemaphore( device_, &semaphoreInfo, nullptr, renderFinishedSemaphore_.replace( ) )
+       != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to create semaphores" );
+
+  }
+
+}
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////
 //
 //  Render loop functions
@@ -911,19 +1080,64 @@ void
 VulkanGlfwWrapper::checkInputEvents ( )
 {
 
-  glfwPollEvents( );
+  GlfwWrapper::pollEvents( );
 
 }
 
 
 ///
-/// \brief VulkanGlfwWrapper::showBuffer
+/// \brief VulkanGlfwWrapper::drawFrame
 ///
 void
-VulkanGlfwWrapper::updateWindow( )
+VulkanGlfwWrapper::drawFrame( )
 {
 
-  glfwSwapBuffers( pWindow_ );
+  uint32_t imageIndex;
+
+  vkAcquireNextImageKHR(
+                        device_,
+                        swapChain_,
+                        std::numeric_limits< uint64_t >::max( ), // disable timeout
+                        imageAvailableSemaphore_,
+                        VK_NULL_HANDLE,
+                        &imageIndex
+                        );
+
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+  VkSemaphore waitSemaphores[]      = { imageAvailableSemaphore_ };
+  VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+  submitInfo.waitSemaphoreCount     = 1;
+  submitInfo.pWaitSemaphores        = waitSemaphores;
+  submitInfo.pWaitDstStageMask      = waitStages;
+
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers    = &commandBuffers_[ imageIndex ];
+
+  VkSemaphore signalSemaphores[]  = { renderFinishedSemaphore_ };
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores    = signalSemaphores;
+
+  if ( vkQueueSubmit( graphicsQueue_, 1, &submitInfo, VK_NULL_HANDLE ) != VK_SUCCESS )
+  {
+
+    throw std::runtime_error( "Failed to submit draw command buffer" );
+
+  }
+
+  VkPresentInfoKHR presentInfo = {};
+  presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores    = signalSemaphores;
+
+  VkSwapchainKHR swapChains[] = { swapChain_ };
+  presentInfo.swapchainCount  = 1;
+  presentInfo.pSwapchains     = swapChains;
+  presentInfo.pImageIndices   = &imageIndex;
+  presentInfo.pResults        = nullptr; // Optional: for VkResults with multiple swapChains
+
+  vkQueuePresentKHR( presentQueue_, &presentInfo );
 
 }
 
@@ -936,9 +1150,38 @@ bool
 VulkanGlfwWrapper::checkWindowShouldClose( )
 {
 
-  return glfwWindowShouldClose( pWindow_ ) != 0;
+  return upGlfw_->windowShouldClose( ) != 0;
 
 }
+
+
+
+///
+/// \brief VulkanGlfwWrapper::syncDevice
+///
+void
+VulkanGlfwWrapper::syncDevice( )
+{
+
+  vkDeviceWaitIdle( device_ );
+
+}
+
+
+
+///
+/// \brief VulkanGlfwWrapper::setCallback
+/// \param pCallback
+///
+void
+VulkanGlfwWrapper::setCallback( Callback *pCallback )
+{
+
+  upGlfw_->setCallback( pCallback );
+
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -947,144 +1190,6 @@ VulkanGlfwWrapper::checkWindowShouldClose( )
 ///////////////////////                                        ////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-
-
-
-///
-/// \brief VulkanGlfwWrapper::_initGlfw
-/// \return
-///
-bool
-VulkanGlfwWrapper::_initGlfw( )
-{
-
-  //
-  // set error callback before anything else to get
-  // error messages from future calls
-  //
-//  glfwSetErrorCallback( CallbackSingleton::errorCallback );
-
-  //
-  // If we aren't already initialized then try
-  // to initialized GLFW.
-  //
-  if ( !glfwInitialized_ && !glfwInit( ) )
-  {
-
-    //
-    // init failed
-    //
-    return false;
-
-  }
-
-  std::cout << "Initialized GLFW Version: ";
-  std::cout << glfwGetVersionString( ) << std::endl;
-
-
-  glfwInitialized_ = true;
-
-  //
-  // using vulkan so we don't need OpenGL
-  //
-  glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
-
-  //
-  // temporary until we handle resizing
-  //
-  glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
-
-  return true;
-
-} // VulkanGlfwWrapper::_initGlfw
-
-
-
-
-
-///
-/// \brief VulkanGlfwWrapper::_terminateGlfw
-///
-void
-VulkanGlfwWrapper::_terminateGlfw( )
-{
-
-  if ( glfwInitialized_ )
-  {
-
-    glfwTerminate( );
-    glfwInitialized_ = false;
-    //
-    // ready to be initialized again if necessary
-    //
-    std::cout << "Terminated GLFW" << std::endl;
-
-  }
-
-}
-
-
-
-
-///
-/// \brief VulkanGlfwWrapper::_initWindow
-/// \param title
-/// \param width
-/// \param height
-///
-void
-VulkanGlfwWrapper::_initWindow(
-                               const std::string title,
-                               const int         width,
-                               const int         height
-                               )
-{
-
-
-  //
-  // no title means no visibility
-  //
-  if ( title.length( ) )
-  {
-
-    glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
-
-  }
-  else
-  {
-
-    glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
-
-  }
-
-  pWindow_ = glfwCreateWindow(
-                              width,
-                              height,
-                              title.c_str( ),
-                              nullptr,
-                              nullptr
-                              );
-
-  if ( !pWindow_ )
-  {
-
-    throw std::runtime_error( "GLFW window creation failed" );
-
-  }
-
-  glfwSwapInterval( 0 );
-
-  /* set default callback functions */
-//  glfwSetWindowSizeCallback ( pWindow_, CallbackSingleton::windowSizeCallback  );
-//  glfwSetWindowFocusCallback( pWindow_, CallbackSingleton::windowFocusCallback );
-
-//  glfwSetMouseButtonCallback( pWindow_, CallbackSingleton::mouseButtonCallback    );
-//  glfwSetKeyCallback        ( pWindow_, CallbackSingleton::keyCallback            );
-//  glfwSetCursorPosCallback  ( pWindow_, CallbackSingleton::cursorPositionCallback );
-//  glfwSetScrollCallback     ( pWindow_, CallbackSingleton::scrollCallback         );
-
-} // GraphicsContext::_initWindow
-
 
 
 ///
@@ -1285,7 +1390,7 @@ void
 VulkanGlfwWrapper::_createVulkanSurface( )
 {
 
-  if ( glfwCreateWindowSurface( instance_, pWindow_, nullptr, surface_.replace( ) ) != VK_SUCCESS )
+  if ( upGlfw_->createWindowSurface( instance_, nullptr, surface_.replace( ) ) != VK_SUCCESS )
   {
 
     throw std::runtime_error( "Failed to create window surface" );

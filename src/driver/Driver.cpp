@@ -98,6 +98,8 @@ Driver::exec(
 
   }
 
+  ioHandler_.onLoopExit( );
+
   return 0;
 
 } // Driver::exec
@@ -118,6 +120,9 @@ Driver::_runAFAPLoop( )
   while ( !ioHandler_.isExitRequested( ) )
   {
 
+    // check for input
+    ioHandler_.updateIO( );
+
     if ( !paused_ )
     {
 
@@ -128,8 +133,6 @@ Driver::_runAFAPLoop( )
     }
 
     ioHandler_.showWorld( 1.0 );
-
-    ioHandler_.updateIO( );
 
     ///\todo print timing info
 
@@ -168,6 +171,9 @@ Driver::_runNFTRLoop( )
   while ( !ioHandler_.isExitRequested( ) )
   {
 
+    // check for input
+    ioHandler_.updateIO( );
+
     if ( !paused_ )
     {
 
@@ -195,8 +201,6 @@ Driver::_runNFTRLoop( )
         worldTime_  += deltaTime;
         accumulator -= deltaTime;
 
-        ///\todo print timing info
-
       }
 
     }
@@ -210,10 +214,6 @@ Driver::_runNFTRLoop( )
     alpha = accumulator / deltaTime;
 
     ioHandler_.showWorld( alpha );
-
-    ioHandler_.updateIO( );
-
-    ///\todo print timing info
 
   }
 

@@ -5,17 +5,17 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <memory>
 #include <vulkan/vulkan.h>
 
 #include "VDeleter.hpp"
 
 
-struct GLFWwindow;
-typedef GLFWwindow GLFWwindow;
-
-
 namespace graphics
 {
+
+class GlfwWrapper;
+class Callback;
 
 
 ///
@@ -37,14 +37,23 @@ public:
   ~VulkanGlfwWrapper( );
 
 
+  ///
+  /// \brief createNewWindow
+  /// \param title
+  /// \param width
+  /// \param height
+  ///
   virtual
-  void createNewWindow(
-                       const std::string &title,
-                       const int          width,
-                       const int          height
-                       );
+  void createNewWindow (
+                        const std::string &title,
+                        const int          width,
+                        const int          height
+                        );
 
 
+  ///
+  /// \brief createRenderPass
+  ///
   virtual
   void createRenderPass ( );
 
@@ -59,6 +68,32 @@ public:
                                const std::string &vertFile,
                                const std::string &fragFile
                                );
+  ///
+  /// \brief createFrameBuffer
+  ///
+  virtual
+  void createFrameBuffer ( );
+
+
+  ///
+  /// \brief createCommandPool
+  ///
+  virtual
+  void createCommandPool ( );
+
+
+  ///
+  /// \brief createCommandBuffers
+  ///
+  virtual
+  void createCommandBuffers ( );
+
+
+  ///
+  /// \brief createSemaphores
+  ///
+  virtual
+  void createSemaphores ( );
 
 
 
@@ -75,11 +110,12 @@ public:
   virtual
   void checkInputEvents ( );
 
+
   //////////////////////////////////////////////////
-  /// \brief updateWindow
+  /// \brief drawFrame
   //////////////////////////////////////////////////
   virtual
-  void updateWindow ( );
+  void drawFrame ( );
 
 
   //////////////////////////////////////////////////
@@ -90,31 +126,29 @@ public:
   bool checkWindowShouldClose ( );
 
 
+
+  ///////////////////////////////////////////////////////////////////////////////////
+  //
+  //  Exit functions
+  //
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  virtual
+  void syncDevice ( );
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////
+  //
+  //  Util functions
+  //
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  virtual
+  void setCallback ( Callback *pCallback );
+
+
 private:
-
-  //////////////////////////////////////////////////
-  /// \brief _initGlfw
-  //////////////////////////////////////////////////
-  bool _initGlfw( );
-
-
-  //////////////////////////////////////////////////
-  /// \brief _terminateGlfw
-  //////////////////////////////////////////////////
-  void _terminateGlfw( );
-
-
-  //////////////////////////////////////////////////
-  /// \brief _initWindow
-  /// \param title
-  /// \param width
-  /// \param height
-  //////////////////////////////////////////////////
-  void _initWindow (
-                    const std::string title,
-                    const int         width,
-                    const int         height
-                    );
 
   //////////////////////////////////////////////////
   /// \brief _initVulkan
@@ -175,63 +209,61 @@ private:
   void _createImageViews ( );
 
 
-  bool glfwInitialized_;
-
-
   //
   // member vars
   //
-  GLFWwindow *pWindow_;
+  std::unique_ptr< graphics::GlfwWrapper > upGlfw_;
+
+
+protected:
 
   VDeleter< VkInstance > instance_ {
     vkDestroyInstance
   };
-
   VDeleter< VkDebugReportCallbackEXT > callback_ {
     instance_, DestroyDebugReportCallbackEXT
   };
-
   VDeleter< VkSurfaceKHR > surface_ {
     instance_, vkDestroySurfaceKHR
   };
 
-  VkPhysicalDevice physicalDevice_;
-
+  VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
   VDeleter< VkDevice > device_ {
     vkDestroyDevice
   };
 
-  VDeleter< VkSwapchainKHR > swapChain_ {
-    device_, vkDestroySwapchainKHR
-  };
-
-  std::vector< VkImage > swapChainImages_;
-  VkFormat swapChainImageFormat_;
-  VkExtent2D swapChainExtent_;
-
   VkQueue graphicsQueue_;
   VkQueue presentQueue_;
 
+  VDeleter< VkSwapchainKHR > swapChain_ {
+    device_, vkDestroySwapchainKHR
+  };
+  std::vector< VkImage > swapChainImages_;
+  VkFormat swapChainImageFormat_;
+  VkExtent2D swapChainExtent_;
   std::vector< VDeleter< VkImageView > > swapChainImageViews_;
-
-  VDeleter< VkShaderModule > vertShaderModule_ {
-    device_, vkDestroyShaderModule
-  };
-
-  VDeleter< VkShaderModule > fragShaderModule_ {
-    device_, vkDestroyShaderModule
-  };
+  std::vector< VDeleter< VkFramebuffer > > swapChainFramebuffers_;
 
   VDeleter< VkRenderPass > renderPass_ {
     device_, vkDestroyRenderPass
   };
-
   VDeleter< VkPipelineLayout > pipelineLayout_ {
     device_, vkDestroyPipelineLayout
   };
-
   VDeleter< VkPipeline > graphicsPipeline_ {
     device_, vkDestroyPipeline
+  };
+
+  VDeleter< VkCommandPool > commandPool_ {
+    device_, vkDestroyCommandPool
+  };
+  std::vector< VkCommandBuffer > commandBuffers_;
+
+  VDeleter< VkSemaphore > imageAvailableSemaphore_ {
+    device_, vkDestroySemaphore
+  };
+  VDeleter< VkSemaphore > renderFinishedSemaphore_ {
+    device_, vkDestroySemaphore
   };
 
 };

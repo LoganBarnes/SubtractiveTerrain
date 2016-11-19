@@ -8,6 +8,6 @@ if [[ ! -d _build ]];
 fi;
 
 cd _build
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$RUN_DIR ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$RUN_DIR ../..
 make -j12
 cd ..
