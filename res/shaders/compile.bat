@@ -3,13 +3,23 @@
 rem goes into each shader directory and comiles the shaders into
 rem SPIR-V byte code
 
-cd default
+rem iterate over directories
+for /D %%d in (*) do (
 
-@ECHO ON
+  rem go into current dir
+  cd %%d
 
-glslangValidator.exe -V shader.vert
-glslangValidator.exe -V shader.frag
+  echo Current directory: %%d
 
-@ECHO OFF
+  rem iterate over shader files only
+  for %%f in ("shader.*") do (
 
-cd ..
+    rem compile shader into SPIR-V byte code
+    glslangValidator.exe -V %%f
+
+  )
+
+  rem exit current directory
+  cd ..
+
+)

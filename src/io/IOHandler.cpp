@@ -81,8 +81,10 @@ IOHandler::IOHandler(
 
     graphics.createRenderPass( );
 
-    graphics.createGraphicsPipeline( SHADER_PATH + "default/vert.spv",
-                                    SHADER_PATH + "default/frag.spv" );
+    graphics.createGraphicsPipeline(
+                                    SHADER_PATH + "screenSpace/vert.spv",
+                                    SHADER_PATH + "terrain/frag.spv"
+                                    );
 
     graphics.createFrameBuffer( );
 

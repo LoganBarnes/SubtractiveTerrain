@@ -745,7 +745,7 @@ VulkanGlfwWrapper::createGraphicsPipeline(
   //
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-  inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
   inputAssembly.primitiveRestartEnable = VK_FALSE;
 
   //
@@ -1024,7 +1024,7 @@ VulkanGlfwWrapper::createCommandBuffers( )
     vkCmdBindPipeline( commandBuffers_[ i ], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline_ );
 
     // vertexCount, instanceCount, firstVertex, firstInstance
-    vkCmdDraw( commandBuffers_[ i ], 3, 1, 0, 0 );
+    vkCmdDraw( commandBuffers_[ i ], 4, 1, 0, 0 );
 
     // last command to finish render pass
     vkCmdEndRenderPass( commandBuffers_[ i ] );
