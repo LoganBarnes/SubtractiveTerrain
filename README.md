@@ -21,7 +21,7 @@ git submodule update --init --recursive
 Unix
 ----
 
-Ensure the Vulkan SDK location is added to the environment path.
+Ensure the Vulkan SDK location is added to the environment path before running commands.
 
 ```bash
 cd run
@@ -33,7 +33,7 @@ cd run
 Windows
 -------
 
-Ensure the Vulkan SDK location is added to the environment path and Visual Studio has been installed.
+Ensure the Vulkan SDK location is added to the environment path and Visual Studio has been installed before running commands.
 
 ```bash
 cd run
