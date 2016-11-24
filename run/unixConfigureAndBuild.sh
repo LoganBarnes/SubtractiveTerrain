@@ -9,5 +9,5 @@ fi;
 
 cd _build
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$RUN_DIR ../..
-make -j12
+make install -j12
 cd ..

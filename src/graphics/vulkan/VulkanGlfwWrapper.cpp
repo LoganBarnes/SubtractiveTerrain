@@ -4,6 +4,7 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include <cstring>
 
 #include "GlfwWrapper.hpp"
 
@@ -46,7 +47,11 @@ readFile( const std::string &filename )
   std::vector< char > buffer( fileSize );
 
   file.seekg( 0 );
-  file.read( buffer.data( ), fileSize );
+
+  file.read(
+            buffer.data( ),
+            static_cast< std::streamsize >( fileSize )
+            );
 
   file.close( );
 
@@ -115,7 +120,7 @@ checkValidationLayerSupport( )
     for ( const auto & layerProperties : availableLayers )
     {
 
-      if ( strcmp( layerName, layerProperties.layerName ) == 0 )
+      if ( std::strcmp( layerName, layerProperties.layerName ) == 0 )
       {
 
         layerFound = true;
@@ -353,7 +358,12 @@ findQueueFamilies(
     }
 
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR( device, i, surface, &presentSupport );
+    vkGetPhysicalDeviceSurfaceSupportKHR(
+                                         device,
+                                         static_cast< uint32_t >( i ),
+                                         surface,
+                                         &presentSupport
+                                         );
 
     if ( queueFamily.queueCount > 0 && presentSupport )
     {
@@ -957,7 +967,7 @@ VulkanGlfwWrapper::createCommandPool( )
 
   VkCommandPoolCreateInfo poolInfo = {};
   poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-  poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily_;
+  poolInfo.queueFamilyIndex = static_cast< uint32_t >( queueFamilyIndices.graphicsFamily_ );
   poolInfo.flags            = 0; // Optional
 
   if ( vkCreateCommandPool( device_, &poolInfo, nullptr, commandPool_.replace( ) ) != VK_SUCCESS )
@@ -1471,7 +1481,7 @@ VulkanGlfwWrapper::_createVulkanLogicalDevice( )
 
     VkDeviceQueueCreateInfo queueCreateInfo = {};
     queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = queueFamily;
+    queueCreateInfo.queueFamilyIndex = static_cast< uint32_t >( queueFamily );
     queueCreateInfo.queueCount       = 1;
     queueCreateInfo.pQueuePriorities = &queuePriority;
     queueCreateInfos.push_back( queueCreateInfo );
@@ -1512,8 +1522,8 @@ VulkanGlfwWrapper::_createVulkanLogicalDevice( )
 
   }
 
-  vkGetDeviceQueue( device_, indices.graphicsFamily_, 0, &graphicsQueue_ );
-  vkGetDeviceQueue( device_, indices.presentFamily_,  0, &presentQueue_  );
+  vkGetDeviceQueue( device_, static_cast< uint32_t >( indices.graphicsFamily_ ), 0, &graphicsQueue_ );
+  vkGetDeviceQueue( device_, static_cast< uint32_t >( indices.presentFamily_ ),  0, &presentQueue_  );
 
 } // VulkanGlfwWrapper::_createVulkanLogicalDevice
 
