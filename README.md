@@ -56,4 +56,5 @@ cmake ../..
 cmake --build . --config Release
 ```
 
-This will create an executable in the run/_build folder or in the run/_build/Release folder depending on the local build setup.
+This will create an executable in the ```run/_build``` folder or in the ```run/_build/Release``` folder depending on the local build setup.
+
