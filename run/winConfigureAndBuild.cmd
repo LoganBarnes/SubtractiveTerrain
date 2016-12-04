@@ -11,5 +11,5 @@ mkdir _build
 
 cd _build
 cmake -DCMAKE_INSTALL_PREFIX=%RUN_DIR% ..\..
-cmake --build . --target INSTALL --config Release
+cmake --build . --target INSTALL --config Release -- /m
 cd ..
