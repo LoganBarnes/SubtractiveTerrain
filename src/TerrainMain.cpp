@@ -2,9 +2,9 @@
 #include <exception>
 
 #include "SubtractiveTerrainConfig.hpp"
-#include "Driver.hpp"
-#include "IOHandler.hpp"
-#include "World.hpp"
+#include "driver/Driver.hpp"
+#include "TerrainIOHandler.hpp"
+#include "world/World.hpp"
 
 
 /////////////////////////////////////////////
@@ -20,12 +20,12 @@ main(
      )
 {
 
-  srt::Driver::printProjectInfo(
-                                srt::PROJECT_NAME,
-                                srt::VERSION_MAJOR,
-                                srt::VERSION_MINOR,
-                                srt::VERSION_PATCH
-                                );
+  shared::Driver::printProjectInfo(
+                                   srt::PROJECT_NAME,
+                                   srt::VERSION_MAJOR,
+                                   srt::VERSION_MINOR,
+                                   srt::VERSION_PATCH
+                                   );
 
   try
   {
@@ -35,14 +35,14 @@ main(
     // and ioHandler to interface between the
     // world and the user
     //
-    srt::World     world;
-    srt::IOHandler renderer( world );
+    shared::World     world;
+    srt::TerrainIOHandler renderer( world );
 
     //
     // pass world and ioHandler to driver
     // to manage update loops
     //
-    srt::Driver driver( world, renderer );
+    shared::Driver driver( world, renderer );
 
     //
     // run program

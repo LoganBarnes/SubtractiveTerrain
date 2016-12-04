@@ -13,99 +13,71 @@ set ( PROJECT_VERSION_PATCH 0 )
 set( SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
 # other paths
-set( RES_PATH    ${PROJECT_SOURCE_DIR}/res        )
-set( SHADER_PATH ${RES_PATH}/shaders              )
-set( THIRDPARTY  ${PROJECT_SOURCE_DIR}/thirdparty )
+set( SHARED_PATH ${PROJECT_SOURCE_DIR}/shared )
+set( RES_PATH    ${PROJECT_SOURCE_DIR}/res    )
+set( SHADER_PATH ${RES_PATH}/shaders          )
 
-set( PROJECT_CONFIG_FILE ${SRC_DIR}/common/ProjectConfig.hpp.in )
+set( PROJECT_CONFIG_FILE ${SHARED_PATH}/src/common/ProjectConfig.hpp.in )
 
 
-#
-# add glfw3 functionality
-#
-set( GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE )
-set( GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE )
-set( GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE )
+set( USE_GLFW   ON CACHE BOOL "" FORCE )
+set( USE_VULKAN ON CACHE BOOL "" FORCE )
+#set( USE_GLM  ON CACHE BOOL "" FORCE )
 
-add_subdirectory( ${THIRDPARTY}/glfw )
-
-#
-# add vulkan functionality
-#
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-     ${THIRDPARTY}/glfw/CMake/modules )
-
-find_package( Vulkan REQUIRED )
+# set variables from shared simulation project
+add_subdirectory( ${SHARED_PATH} )
 
 
 # system header dirs
 set(
     PROJECT_SYSTEM_INCLUDE_DIRS
-    ${THIRDPARTY}/include
-    ${THIRDPARTY}/glfw/include
-    ${VULKAN_INCLUDE_DIR}
+    ${SHARED_SYSTEM_INCLUDE_DIRS}
     )
 
 # libraries to link against
 set(
     PROJECT_LINK_LIBS
-    glfw
-    ${VULKAN_LIBRARY}
+    ${SHARED_LINK_LIBS}
     )
 
 # must be built before project lib
 set(
     PROJECT_DEP_TARGETS
-    glfw
+    ${SHARED_DEP_TARGETS}
     )
+
 
 # header dirs
 set(
     PROJECT_INCLUDE_DIRS
-    ${SRC_DIR}/common
-    ${SRC_DIR}/driver
+
+    ${SHARED_INCLUDE_DIRS}
+
     ${SRC_DIR}/io
-    ${SRC_DIR}/graphics/glfw
-    ${SRC_DIR}/graphics/vulkan
-    ${SRC_DIR}/world
     )
 
 # cpp files
 set(
     PROJECT_SOURCE
 
-    # driver
-    ${SRC_DIR}/driver/Driver.cpp
+    ${SHARED_SOURCE}
 
     # rendering
-    ${SRC_DIR}/io/IOHandler.cpp
-    ${SRC_DIR}/io/TerrainCallback.cpp
+    ${SRC_DIR}/io/TerrainIOHandler.cpp
 
-    # graphics/glfw
-    ${SRC_DIR}/graphics/glfw/GlfwWrapper.cpp
-    ${SRC_DIR}/graphics/glfw/CallbackSingleton.cpp
-
-    # graphics/vulkan
-    ${SRC_DIR}/graphics/vulkan/VulkanGlfwWrapper.cpp
-
-    # graphics/dx12
-    # ${SRC_DIR}/graphics/vulkan/DX12Wrapper.cpp
-
-    # world
-    ${SRC_DIR}/world/World.cpp
 
     )
 
-# headers to install
-set(
-    PROJECT_INSTALL_HEADERS
-    ${SRC_DIR}/driver/Driver.hpp
-    ${SRC_DIR}/io/IOHandler.hpp
-    ${SRC_DIR}/world/World.hpp
-    )
+## headers to install
+#set(
+#    PROJECT_INSTALL_HEADERS
+#    ${SRC_DIR}/driver/Driver.hpp
+#    ${SRC_DIR}/io/IOHandler.hpp
+#    ${SRC_DIR}/world/World.hpp
+#    )
 
 # file with main function
-set( PROJECT_MAIN ${SRC_DIR}/ExampleMain.cpp )
+set( PROJECT_MAIN ${SRC_DIR}/TerrainMain.cpp )
 
 include( common/cmake/DefaultProjectLibrary.cmake )
 
