@@ -79,5 +79,5 @@ set(
 # file with main function
 set( PROJECT_MAIN ${SRC_DIR}/TerrainMain.cpp )
 
-include( common/cmake/DefaultProjectLibrary.cmake )
+include( ${SHARED_PATH}/cmake/DefaultProjectLibrary.cmake )
 
