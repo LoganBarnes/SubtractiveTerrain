@@ -52,7 +52,7 @@ Ensure the Vulkan SDK location is added to the environment paths before running 
 cd run
 mkdir _build
 cd _build
-cmake ../..
+cmake -DCMAKE_BUILD_TYPE=Release ../..
 cmake --build . --config Release
 ```
 
