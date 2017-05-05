@@ -16,24 +16,7 @@ namespace srt
 /////////////////////////////////////////////
 TerrainIOHandler::TerrainIOHandler( shs::World &world )
   : shs::VulkanIOHandler( world, true )
-{
-
-  upVulkanWrapper_->createRenderPass( );
-
-  upVulkanWrapper_->createGraphicsPipeline(
-                                           SHADER_PATH + "screenSpace/vert.spv",
-                                           SHADER_PATH + "terrain/frag.spv"
-                                           );
-
-  upVulkanWrapper_->createFrameBuffer( );
-
-  upVulkanWrapper_->createCommandPool( );
-
-  upVulkanWrapper_->createCommandBuffers( );
-
-  upVulkanWrapper_->createSemaphores( );
-
-}
+{}
 
 
 
@@ -56,25 +39,8 @@ TerrainIOHandler::~TerrainIOHandler( )
 void
 TerrainIOHandler::onRender( const double )
 {
-
   upVulkanWrapper_->drawFrame( );
-
 } // TerrainIOHandler::onRender
-
-
-
-/////////////////////////////////////////////
-/// \brief IOHandler::onLoopExit
-///
-/// \author Logan Barnes
-/////////////////////////////////////////////
-void
-TerrainIOHandler::onLoopExit( )
-{
-
-  upVulkanWrapper_->syncDevice( );
-
-}
 
 
 
