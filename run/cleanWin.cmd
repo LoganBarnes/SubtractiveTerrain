@@ -1,24 +1,11 @@
-
 @ECHO OFF
 
-IF NOT EXIST _build GOTO PASSBUILDDIR
-rmdir _build /s /q
-:PASSBUILDDIR
-
-IF NOT EXIST bin GOTO PASSBINDIR
-rmdir bin /s /q
-:PASSBINDIR
-
-IF NOT EXIST lib GOTO PASSLIBDIR
-rmdir lib /s /q
-:PASSLIBDIR
-
-IF NOT EXIST libbin GOTO PASSLIBBINDIR
-rmdir libbin /s /q
-:PASSLIBBINDIR
-
-IF NOT EXIST include GOTO PASSINCLUDEDIR
-rmdir include /s /q
-:PASSINCLUDEDIR
+cmake -E remove_directory _build
+cmake -E remove_directory bin
+cmake -E remove_directory lib
+cmake -E remove_directory libbin
+cmake -E remove_directory include
+cmake -E remove_directory testbin
+cmake -E remove imgui.ini
 
 echo Project clean

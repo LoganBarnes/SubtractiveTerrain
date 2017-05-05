@@ -8,7 +8,7 @@ namespace srt
 
 
 TerrainCallback::TerrainCallback( )
-  : graphics::Callback( )
+  : shg::Callback( )
 {}
 
 
@@ -35,14 +35,10 @@ TerrainCallback::handleKey(
                            int         mods
                            )
 {
-
   if ( key == GLFW_KEY_ESCAPE )
   {
-
-      glfwSetWindowShouldClose( pWindow, true );
-
+    glfwSetWindowShouldClose( pWindow, true );
   }
-
 }
 
 

@@ -9,7 +9,7 @@ namespace srt
 {
 
 
-class TerrainCallback : public graphics::Callback
+class TerrainCallback : public shg::Callback
 {
 
 public:

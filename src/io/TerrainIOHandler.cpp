@@ -1,6 +1,6 @@
 #include "TerrainIOHandler.hpp"
 
-#include "graphics/vulkan/VulkanGlfwWrapper.hpp"
+#include "shared/graphics/VulkanGlfwWrapper.hpp"
 #include "SubtractiveTerrainConfig.hpp"
 
 
@@ -14,8 +14,8 @@ namespace srt
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////
-TerrainIOHandler::TerrainIOHandler( shared::World &world )
-  : shared::VulkanIOHandler( world, true )
+TerrainIOHandler::TerrainIOHandler( shs::World &world )
+  : shs::VulkanIOHandler( world, true )
 {
 
   upVulkanWrapper_->createRenderPass( );
@@ -54,7 +54,7 @@ TerrainIOHandler::~TerrainIOHandler( )
 /// \author Logan Barnes
 /////////////////////////////////////////////
 void
-TerrainIOHandler::onRender( const double alpha )
+TerrainIOHandler::onRender( const double )
 {
 
   upVulkanWrapper_->drawFrame( );

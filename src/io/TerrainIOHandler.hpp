@@ -2,10 +2,10 @@
 #define TerrainIOHandler_hpp
 
 
-#include "io/VulkanIOHandler.hpp"
+#include "shared/core/VulkanIOHandler.hpp"
 
 
-namespace shared
+namespace shs
 {
 
 class World;
@@ -22,7 +22,7 @@ namespace srt
 ///
 /// \author Logan Barnes
 /////////////////////////////////////////////
-class TerrainIOHandler : public shared::VulkanIOHandler
+class TerrainIOHandler : public shs::VulkanIOHandler
 {
 
 public:
@@ -30,7 +30,7 @@ public:
   ///////////////////////////////////////////////////////////////
   /// \brief Renderer
   ///////////////////////////////////////////////////////////////
-  TerrainIOHandler( shared::World &world );
+  TerrainIOHandler( shs::World &world );
 
 
   ///////////////////////////////////////////////////////////////

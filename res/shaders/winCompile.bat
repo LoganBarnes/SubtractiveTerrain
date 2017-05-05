@@ -1,7 +1,7 @@
 @ECHO OFF
 
-rem goes into each shader directory and comiles the shaders into
-rem SPIR-V byte code
+rem goes into each shader directory and comiles
+rem the shaders into SPIR-V byte code
 
 rem iterate over directories
 for /D %%d in (*) do (
